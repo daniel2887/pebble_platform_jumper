@@ -159,7 +159,6 @@ static void window_unload(Window *window)
 
 static void timer_callback(void *data)
 {
-
 	if (reset_game_req) {
 		reset_game();
 		reset_game_req = false;
@@ -201,12 +200,14 @@ static void init(void)
 	const bool animated = true;
 	window_stack_push(window, animated);
 
+	accel_data_service_subscribe(0, NULL);
 	timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);
 }
 
 static void deinit(void)
 {
 	window_destroy(window);
+	accel_data_service_unsubscribe();
 }
 
 int main(void)
