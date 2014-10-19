@@ -49,18 +49,11 @@ void platform_spawn()
 	struct platform_t *tail;
 	struct platform_t *platform = malloc(sizeof(struct platform_t));
 	static uint16_t platform_num = 1;
+	int16_t platform_spawn_y_min, platform_spawn_y_max;
 	if (!platform) {
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Can't allocate memory for new platform\n");
 		return;
 	}
-
-	platform->data.origin.x = window_frame.size.w + 1; /* Just outside window */
-	platform->data.origin.y = rand_range(player.radius * 3, window_frame.size.h);
-	platform->data.size.h = PLATFORM_THICKNESS;
-	platform->data.size.w = rand_range(PLATFORM_MIN_LEN, PLATFORM_MAX_LEN);
-	platform->next = NULL;
-	platform->prev = NULL;
-	platform->platform_num = platform_num++;
 
 	/* Append platform to list */
 	tail = platform_list;
@@ -72,6 +65,31 @@ void platform_spawn()
 		tail->next = platform;
 		platform->prev = tail;
 	}
+
+
+	/* Make sure that the new platform is reachable
+	 * by the player */
+	if(platform->prev) {
+		platform_spawn_y_min = platform->prev->data.origin.y - PLAYER_MAX_JUMP_HEIGHT;
+		if (platform_spawn_y_min < player.radius * 3)
+			platform_spawn_y_min = player.radius * 3;
+
+		platform_spawn_y_max = platform->prev->data.origin.y + PLAYER_MAX_JUMP_HEIGHT;
+		if (platform_spawn_y_max > window_frame.size.h)
+			platform_spawn_y_max = window_frame.size.h;
+	} else {
+		platform_spawn_y_min = player.radius * 3;
+		platform_spawn_y_max = window_frame.size.h;
+	}
+
+	platform->data.origin.x = window_frame.size.w + 1; /* Just outside window */
+	platform->data.origin.y = rand_range(platform_spawn_y_min, platform_spawn_y_max);
+	platform->data.size.h = PLATFORM_THICKNESS;
+	platform->data.size.w = rand_range(PLATFORM_MIN_LEN, PLATFORM_MAX_LEN);
+	platform->next = NULL;
+	platform->prev = NULL;
+	platform->platform_num = platform_num++;
+
 }
 
 /* Returns true if there are any platforms
