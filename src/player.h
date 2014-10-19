@@ -8,6 +8,7 @@ struct player_t {
 	double accel_y;
 	double vel_y;
 	int16_t platform_num; /* Player last landed on this platform */
+	uint8_t jumps_taken; /* Jumps taken since last landing */
 };
 
 void player_init();

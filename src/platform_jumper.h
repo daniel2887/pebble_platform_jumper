@@ -7,6 +7,7 @@ void game_over();
 #define ANIMATION_STEP_MS 50.0 /* 20fps */
 #define PLAYER_RADIUS 10
 #define PLAYER_JUMP_VEL 0.3 /* pix per ms */
+#define PLAYER_MAX_JUMPS 2
 #define GRAVITY -0.001 /* pix per ms^2 */
 #define PLATFORM_THICKNESS 3
 #define PLATFORM_MIN_LEN (PLAYER_RADIUS * 2)

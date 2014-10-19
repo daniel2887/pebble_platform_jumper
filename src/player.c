@@ -21,16 +21,22 @@ void player_init()
 	player.accel_y = 0;
 	player.vel_y = 0;
 	player.platform_num = -1;
+	player.jumps_taken = 0;
 	player_layer_dirty = true;
 }
 
 void player_jump()
 {
-	player.vel_y = PLAYER_JUMP_VEL;
+	if (player.jumps_taken < PLAYER_MAX_JUMPS) {
+		player.vel_y = PLAYER_JUMP_VEL;
+		player.jumps_taken++;
+	}
 }
 
 static void player_landed(uint16_t platform_num)
 {
+	player.jumps_taken = 0;
+
 	/* Don't count first drop as a point */
 	if (platform_num == 0)
 		return;
