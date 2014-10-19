@@ -12,6 +12,7 @@ bool game_is_over = false;
 struct platform_t *platform_list = NULL;
 struct player_t player;
 GRect window_frame;
+extern bool player_layer_dirty;
 
 static AppTimer *timer;
 

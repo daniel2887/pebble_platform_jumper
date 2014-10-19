@@ -8,6 +8,7 @@
 extern struct platform_t *platform_list;
 extern struct player_t player;
 extern GRect window_frame;
+bool player_layer_dirty;
 
 void player_init()
 {
