@@ -9,7 +9,9 @@ extern struct platform_t *platform_list;
 extern struct player_t player;
 extern GRect window_frame;
 extern int16_t game_score;
+extern int16_t game_level;
 extern bool score_layer_dirty;
+extern bool level_layer_dirty;
 bool player_layer_dirty;
 
 void player_init()
@@ -49,6 +51,11 @@ static void player_landed(uint16_t platform_num)
 	player.platform_num = platform_num;
 	game_score++;
 	score_layer_dirty = true;
+
+	if (game_score % GAME_INCR_LEVEL_EVERY_N_PTS == 0) {
+		game_level++;
+		level_layer_dirty = true;
+	}
 }
 
 void player_layer_update_callback(Layer *me, GContext *ctx)

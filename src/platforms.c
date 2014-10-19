@@ -8,6 +8,7 @@
 extern struct platform_t *platform_list;
 extern struct player_t player;
 extern GRect window_frame;
+extern int16_t game_level;
 
 void platforms_init()
 {
@@ -26,9 +27,6 @@ void platforms_init()
 	platform->platform_num = 0;
 
 	platform_list = platform;
-
-	/* TODO: just for debug */
-	//platform_list->data.origin.x = 0;
 }
 
 void platforms_layer_update_callback(Layer *me, GContext *ctx)
@@ -120,7 +118,9 @@ void calc_platforms()
 		struct platform_t *temp = platform_itr->next;
 
 		/* Advance all platforms to the left (round speed) */
-		platform_itr->data.origin.x -= (int16_t)(PLATFORM_SPEED * ANIMATION_STEP_MS + 0.5);
+		platform_itr->data.origin.x -=
+			(int16_t)((PLATFORM_SPEED + PLATFORM_SPEED_INCR_PER_LEVEL * game_level) *
+			ANIMATION_STEP_MS + 0.5);
 
 		if ((platform_itr->data.origin.x + platform_itr->data.size.w) < 0) {
 			if (platform_itr->prev)
