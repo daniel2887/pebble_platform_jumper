@@ -1,8 +1,8 @@
 {
   "uuid": "1639b4f1-65ef-4633-863f-5bab5b72d3d9",
-  "shortName": "platform_jumper",
-  "longName": "platform_jumper",
-  "companyName": "MakeAwesomeHappen",
+  "shortName": "Platform Jumper",
+  "longName": "Platform Jumper",
+  "companyName": "DS",
   "versionCode": 1,
   "versionLabel": "1.0",
   "watchapp": {
