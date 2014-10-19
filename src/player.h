@@ -4,8 +4,10 @@ struct player_t {
 	uint8_t radius;
 	uint8_t x;
 	double y;
+	double last_y;
 	double accel_y;
 	double vel_y;
+	int16_t platform_num; /* Player last landed on this platform */
 };
 
 void player_init();

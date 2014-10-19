@@ -8,6 +8,8 @@
 extern struct platform_t *platform_list;
 extern struct player_t player;
 extern GRect window_frame;
+extern int16_t game_score;
+extern bool score_layer_dirty;
 bool player_layer_dirty;
 
 void player_init()
@@ -15,12 +17,32 @@ void player_init()
 	player.radius = PLAYER_RADIUS;
 	player.x = player.radius * 2;
 	player.y = 0;
+	player.last_y = 0;
+	player.accel_y = 0;
+	player.vel_y = 0;
+	player.platform_num = -1;
 	player_layer_dirty = true;
 }
 
 void player_jump()
 {
 	player.vel_y = PLAYER_JUMP_VEL;
+}
+
+static void player_landed(uint16_t platform_num)
+{
+	/* Don't count first drop as a point */
+	if (platform_num == 0)
+		return;
+	
+	/* Don't count landings on the same platform
+	 * as a point */
+	if (platform_num == player.platform_num)
+		return;
+
+	player.platform_num = platform_num;
+	game_score++;
+	score_layer_dirty = true;
 }
 
 void player_layer_update_callback(Layer *me, GContext *ctx)
@@ -31,7 +53,6 @@ void player_layer_update_callback(Layer *me, GContext *ctx)
 
 void calc_player()
 {
-	static double last_y;
 	struct platform_t *platform_itr = platform_list;
 
 	/* Upwards movement is negative in terms of
@@ -52,17 +73,23 @@ void calc_player()
 
 		/* Collision if:
 		 * 	- Platform is located under the player
-		 * 	- Bottom tip of the player located within the platform
-		 * 	- Ball is falling or is stationary
-		 * 	*/
+		 * 	- Bottom tip of the player is attempting to
+		 * 	  move through the platform during this frame
+		 */
 		if (player.x >= data->origin.x &&
 			player.x <= (data->origin.x + data->size.w) &&
-			last_y + player.radius <= data->origin.y &&
+			player.last_y + player.radius <= data->origin.y &&
 			player.y + player.radius >= data->origin.y &&
 			player.vel_y <= 0) {
 			player.y = data->origin.y - player.radius;
 			player.vel_y = 0;
-			}
+
+			/* Player just landed on a new platform
+			 * if it collided with a platform after
+			 * being in motion */
+			if (player.last_y != player.y)
+				player_landed(platform_itr->platform_num);
+		}
 	}
 
 	/* Check if player dropped below window */
@@ -75,9 +102,9 @@ void calc_player()
 
 	player.vel_y += GRAVITY * ANIMATION_STEP_MS;
 
-	player_layer_dirty = (player.y != last_y);
+	player_layer_dirty = (player.y != player.last_y);
 
-	last_y = player.y;
+	player.last_y = player.y;
 }
 
 void reset_player()

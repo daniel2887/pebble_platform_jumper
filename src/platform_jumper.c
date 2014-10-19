@@ -8,6 +8,9 @@ static Layer *player_layer;
 static Layer *platforms_layer;
 static Layer *game_over_layer;
 bool game_is_over = false;
+static Layer *score_layer;
+int16_t game_score = 0;
+bool score_layer_dirty;
 
 struct platform_t *platform_list = NULL;
 struct player_t player;
@@ -23,10 +26,28 @@ uint16_t rand_range(uint16_t min, uint16_t max)
 	return (max - min) * (double)rand() / (double) RAND_MAX + min;
 }
 
+static void score_layer_update_callback(Layer *me, GContext *ctx)
+{
+	char score_str[32] = {0};
+
+	snprintf(score_str, sizeof(score_str), "score: %d", game_score);
+
+	graphics_context_set_text_color(ctx, GColorBlack);
+	graphics_draw_text(ctx,
+		score_str,
+		fonts_get_system_font(FONT_KEY_GOTHIC_14),
+		GRect(0, 0, window_frame.size.w, window_frame.size.h / 3),
+		GTextOverflowModeWordWrap,
+		GTextAlignmentRight,
+		NULL);
+}
+
 static void reset_game()
 {
 	game_is_over = false;
 	layer_set_hidden(game_over_layer, true);
+
+	game_score = 0;
 
 	reset_platforms();
 	reset_player();
@@ -92,6 +113,10 @@ static void window_load(Window *window) {
 	layer_set_hidden(game_over_layer, true);
 	layer_mark_dirty(game_over_layer);
 
+	score_layer = layer_create(frame);
+	layer_set_update_proc(score_layer, score_layer_update_callback);
+	layer_add_child(window_layer, score_layer);
+
 	player_init();
 	platforms_init();
 }
@@ -101,6 +126,7 @@ static void window_unload(Window *window)
 	layer_destroy(player_layer);
 	layer_destroy(platforms_layer);
 	layer_destroy(game_over_layer);
+	layer_destroy(score_layer);
 }
 
 static void timer_callback(void *data)
@@ -117,8 +143,15 @@ static void timer_callback(void *data)
 
 	if (!game_is_over) {
 		calc_player();
-		if (player_layer_dirty)
+		if (player_layer_dirty) {
 			layer_mark_dirty(player_layer);
+			player_layer_dirty = false;
+		}
+		
+		if (score_layer_dirty) {
+			layer_mark_dirty(score_layer);
+			score_layer_dirty = false;
+		}
 	}
 
 	timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);
