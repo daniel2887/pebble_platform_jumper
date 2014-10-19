@@ -115,9 +115,11 @@ static void timer_callback(void *data)
 
 	layer_mark_dirty(platforms_layer);
 
-	calc_player();
-	if (player_layer_dirty)
-		layer_mark_dirty(player_layer);
+	if (!game_is_over) {
+		calc_player();
+		if (player_layer_dirty)
+			layer_mark_dirty(player_layer);
+	}
 
 	timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);
 }
