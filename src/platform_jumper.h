@@ -5,7 +5,7 @@ void game_over();
 
 /* Game config */
 
-#define ANIMATION_STEP_MS 50.0 /* 20fps */
+#define ANIMATION_STEP_MS 41.67 /* 24fps */
 #define GRAVITY -0.001 /* pix per ms^2 */
 #define ACCEL_DEAD_ZONE 30.0 /* milli-G */
 
