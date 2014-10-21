@@ -7,8 +7,7 @@ struct platform_t {
 	uint16_t platform_num;
 };
 
-void platforms_init();
-void platforms_layer_update_callback(Layer *me, GContext *ctx);
-void calc_platforms();
-void platform_spawn();
-void reset_platforms();
+void platforms_init(struct platform_t **platform_list);
+void calc_platforms(struct platform_t **platform_list);
+void platform_spawn(struct platform_t **platform_list);
+void reset_platforms(struct platform_t **platform_list);

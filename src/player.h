@@ -1,5 +1,7 @@
 #pragma once
 
+#include "platforms.h"
+
 struct player_t {
 	uint8_t radius;
 
@@ -15,8 +17,7 @@ struct player_t {
 	uint8_t jumps_taken; /* Jumps taken since last landing */
 };
 
-void player_init();
-void player_jump();
-void player_layer_update_callback(Layer *me, GContext *ctx);
-void calc_player();
-void reset_player();
+void player_init(struct player_t *player);
+void player_jump(struct player_t *player);
+void calc_player(struct player_t *player, struct platform_t *platform_list);
+void reset_player(struct player_t *player);

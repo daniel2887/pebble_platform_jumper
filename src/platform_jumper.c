@@ -15,11 +15,9 @@ bool game_is_paused = false;
 
 static Layer *score_layer;
 int16_t game_score = 0;
-bool score_layer_dirty;
 
 static Layer *level_layer;
 int16_t game_level = 0;
-bool level_layer_dirty;
 
 struct platform_t *platform_list = NULL;
 struct player_t player;
@@ -33,6 +31,21 @@ static void timer_callback(void *data);
 uint16_t rand_range(uint16_t min, uint16_t max)
 {
 	return (max - min) * (double)rand() / (double) RAND_MAX + min;
+}
+
+int16_t get_game_level()
+{
+	return game_level;
+}
+
+void score_point()
+{
+	game_score++;
+	layer_mark_dirty(score_layer);
+	if (game_score % GAME_INCR_LEVEL_EVERY_N_PTS == 0) {
+		game_level++;
+		layer_mark_dirty(level_layer);
+	}
 }
 
 static void level_layer_update_callback(Layer *me, GContext *ctx)
@@ -81,8 +94,8 @@ static void reset_game()
 	game_score = 0;
 	game_level = 0;
 
-	reset_platforms();
-	reset_player();
+	reset_platforms(&platform_list);
+	reset_player(&player);
 }
 
 static void game_over_layer_update_callback(Layer *me, GContext *ctx)
@@ -109,6 +122,26 @@ static void game_paused_layer_update_callback(Layer *me, GContext *ctx)
 		NULL);
 }
 
+void player_layer_update_callback(Layer *me, GContext *ctx)
+{
+	graphics_context_set_fill_color(ctx, GColorBlack);
+	graphics_fill_circle(ctx, GPoint(player.x, player.y), player.radius);
+}
+
+void platforms_layer_update_callback(Layer *me, GContext *ctx)
+{
+	struct platform_t *platform_itr;
+
+	for (platform_itr = platform_list;
+		platform_itr != NULL;
+		platform_itr = platform_itr->next) {
+
+		graphics_context_set_fill_color(ctx, GColorBlack);
+		graphics_fill_rect (ctx, platform_itr->data, 0, 0);
+	}
+}
+
+
 void game_over()
 {
 	if (game_is_over)
@@ -125,7 +158,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context)
 	if (game_is_over)
 		return;
 
-	player_jump();
+	player_jump(&player);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context)
@@ -190,8 +223,8 @@ static void window_load(Window *window) {
 	layer_set_update_proc(level_layer, level_layer_update_callback);
 	layer_add_child(window_layer, level_layer);
 
-	player_init();
-	platforms_init();
+	player_init(&player);
+	platforms_init(&platform_list);
 }
 
 static void window_unload(Window *window)
@@ -209,26 +242,14 @@ static void timer_callback(void *data)
 	if(game_is_paused)
 		return;
 
-	calc_platforms();
+	calc_platforms(&platform_list);
 
 	layer_mark_dirty(platforms_layer);
 
 	if (!game_is_over) {
-		calc_player();
-		if (player_layer_dirty) {
+		calc_player(&player, platform_list);
+		if (player.y != player.last_y || player.x != player.last_x)
 			layer_mark_dirty(player_layer);
-			player_layer_dirty = false;
-		}
-		
-		if (score_layer_dirty) {
-			layer_mark_dirty(score_layer);
-			score_layer_dirty = false;
-		}
-
-		if (level_layer_dirty) {
-			layer_mark_dirty(level_layer);
-			level_layer_dirty = false;
-		}
 	}
 
 	timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);

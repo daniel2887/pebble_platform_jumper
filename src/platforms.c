@@ -3,14 +3,9 @@
 #include "platforms.h"
 #include "player.h"
 
-/* TODO: Wrap these up in a game-wide context
- * and pass context handle to helper functions*/
-extern struct platform_t *platform_list;
-extern struct player_t player;
 extern GRect window_frame;
-extern int16_t game_level;
 
-void platforms_init()
+void platforms_init(struct platform_t **platform_list)
 {
 	struct platform_t *platform = malloc(sizeof(struct platform_t));
 	if (!platform) {
@@ -19,30 +14,17 @@ void platforms_init()
 	}
 
 	platform->data.origin.x = 0;
-	platform->data.origin.y = rand_range(player.radius * 3, window_frame.size.h);
+	platform->data.origin.y = rand_range(PLAYER_RADIUS * 3, window_frame.size.h);
 	platform->data.size.h = PLATFORM_THICKNESS;
 	platform->data.size.w = window_frame.size.w;
 	platform->next = NULL;
 	platform->prev = NULL;
 	platform->platform_num = 0;
 
-	platform_list = platform;
+	*platform_list = platform;
 }
 
-void platforms_layer_update_callback(Layer *me, GContext *ctx)
-{
-	struct platform_t *platform_itr = platform_list;
-	
-	for (platform_itr = platform_list;
-		platform_itr != NULL;
-		platform_itr = platform_itr->next) {
-
-		graphics_context_set_fill_color(ctx, GColorBlack);
-		graphics_fill_rect (ctx, platform_itr->data, 0, 0);
-	}
-}
-
-void platform_spawn()
+void platform_spawn(struct platform_t **platform_list)
 {
 	struct platform_t *tail;
 	struct platform_t *platform = malloc(sizeof(struct platform_t));
@@ -54,9 +36,9 @@ void platform_spawn()
 	}
 
 	/* Append platform to list */
-	tail = platform_list;
+	tail = *platform_list;
 	if (!tail)
-		platform_list = platform;
+		*platform_list = platform;
 	else {
 		while (tail->next)
 			tail = tail->next;
@@ -69,14 +51,14 @@ void platform_spawn()
 	 * by the player */
 	if(platform->prev) {
 		platform_spawn_y_min = platform->prev->data.origin.y - PLAYER_MAX_JUMP_HEIGHT;
-		if (platform_spawn_y_min < player.radius * 3)
-			platform_spawn_y_min = player.radius * 3;
+		if (platform_spawn_y_min < PLAYER_RADIUS * 3)
+			platform_spawn_y_min = PLAYER_RADIUS * 3;
 
 		platform_spawn_y_max = platform->prev->data.origin.y + PLAYER_MAX_JUMP_HEIGHT;
 		if (platform_spawn_y_max > window_frame.size.h)
 			platform_spawn_y_max = window_frame.size.h;
 	} else {
-		platform_spawn_y_min = player.radius * 3;
+		platform_spawn_y_min = PLAYER_RADIUS * 3;
 		platform_spawn_y_max = window_frame.size.h;
 	}
 
@@ -94,10 +76,10 @@ void platform_spawn()
  * partially or fully hidden to the right of the
  * screen
  */
-static bool platforms_pending()
+static bool platforms_pending(struct platform_t **platform_list)
 {
-	struct platform_t *platform_itr = platform_list;
-	for (platform_itr = platform_list;
+	struct platform_t *platform_itr;
+	for (platform_itr = *platform_list;
 		platform_itr != NULL;
 		platform_itr = platform_itr->next) {
 		GRect *data = &platform_itr->data;
@@ -107,21 +89,22 @@ static bool platforms_pending()
 	return false;
 }
 
-void calc_platforms()
+void calc_platforms(struct platform_t **platform_list)
 {
 	static int16_t time_to_spawn_platform = 0;
-	struct platform_t *platform_itr = platform_list;
+	struct platform_t *platform_itr = *platform_list;
 
 	/* Remove any platforms that are no longer visible */
-	platform_itr = platform_list;
+	platform_itr = *platform_list;
 	while (platform_itr) {
 		struct platform_t *temp = platform_itr->next;
 
 		/* Advance all platforms to the left (round speed) */
 		platform_itr->data.origin.x -=
-			(int16_t)((PLATFORM_SPEED + PLATFORM_SPEED_INCR_PER_LEVEL * game_level) *
+			(int16_t)((PLATFORM_SPEED + PLATFORM_SPEED_INCR_PER_LEVEL * get_game_level()) *
 			ANIMATION_STEP_MS + 0.5);
 
+		/* Platform existed screen to the left - remove it */
 		if ((platform_itr->data.origin.x + platform_itr->data.size.w) < 0) {
 			if (platform_itr->prev)
 				platform_itr->prev->next = platform_itr->next;
@@ -129,8 +112,9 @@ void calc_platforms()
 			if (platform_itr->next)
 				platform_itr->next->prev = platform_itr->prev;
 
-			if (platform_itr == platform_list)
-				platform_list = platform_list->next;
+			/* Removing head of list */
+			if (platform_itr == *platform_list)
+				*platform_list = (*platform_list)->next;
 
 			free(platform_itr);
 		}
@@ -139,18 +123,18 @@ void calc_platforms()
 	}
 
 	/* Time to spawn a new platform? */
-	if (!platforms_pending()) {
+	if (!platforms_pending(platform_list)) {
 		time_to_spawn_platform -= ANIMATION_STEP_MS;
 		if (time_to_spawn_platform <= 0) {
-			platform_spawn();
+			platform_spawn(platform_list);
 			time_to_spawn_platform = rand_range(PLATFORM_SPAWN_RATE_MIN, PLATFORM_SPAWN_RATE_MAX);
 		}
 	}
 }
 
-void reset_platforms()
+void reset_platforms(struct platform_t **platform_list)
 {
-	struct platform_t *platform_itr = platform_list;
+	struct platform_t *platform_itr = *platform_list;
 
 	/* Remove all platforms */
 	while (platform_itr) {
@@ -159,8 +143,8 @@ void reset_platforms()
 		free(temp);
 	}
 
-	platform_list = NULL;
+	*platform_list = NULL;
 
 	/* Respawn initial platform */
-	platforms_init();
+	platforms_init(platform_list);
 }

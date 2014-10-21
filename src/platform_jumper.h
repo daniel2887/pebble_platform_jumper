@@ -2,6 +2,8 @@
 
 uint16_t rand_range(uint16_t min, uint16_t max);
 void game_over();
+int16_t get_game_level();
+void score_point();
 
 /* Game config */
 
