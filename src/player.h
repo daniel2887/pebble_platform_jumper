@@ -3,8 +3,8 @@
 struct player_t {
 	uint8_t radius;
 
-	uint8_t x;
-	uint8_t last_x;
+	int16_t x;
+	int16_t last_x;
 	double vel_x;
 
 	uint8_t y;
