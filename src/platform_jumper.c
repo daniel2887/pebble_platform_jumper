@@ -10,6 +10,9 @@ static Layer *platforms_layer;
 static Layer *game_over_layer;
 bool game_is_over = false;
 
+static Layer *game_paused_layer;
+bool game_is_paused = false;
+
 static Layer *score_layer;
 int16_t game_score = 0;
 bool score_layer_dirty;
@@ -25,7 +28,7 @@ extern bool player_layer_dirty;
 
 static AppTimer *timer;
 
-bool reset_game_req = false;
+static void timer_callback(void *data);
 
 uint16_t rand_range(uint16_t min, uint16_t max)
 {
@@ -69,6 +72,12 @@ static void reset_game()
 	game_is_over = false;
 	layer_set_hidden(game_over_layer, true);
 
+	if (game_is_paused) {
+		game_is_paused = false;
+		timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);
+		layer_set_hidden(game_paused_layer, true);
+	}
+
 	game_score = 0;
 	game_level = 0;
 
@@ -81,6 +90,18 @@ static void game_over_layer_update_callback(Layer *me, GContext *ctx)
 	graphics_context_set_text_color(ctx, GColorBlack);
 	graphics_draw_text(ctx,
 		"gg\n(Up to respawn)",
+		fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+		GRect(0, window_frame.size.h / 3, window_frame.size.w, window_frame.size.h),
+		GTextOverflowModeWordWrap,
+		GTextAlignmentCenter,
+		NULL);
+}
+
+static void game_paused_layer_update_callback(Layer *me, GContext *ctx)
+{
+	graphics_context_set_text_color(ctx, GColorBlack);
+	graphics_draw_text(ctx,
+		"PAUSED",
 		fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
 		GRect(0, window_frame.size.h / 3, window_frame.size.w, window_frame.size.h),
 		GTextOverflowModeWordWrap,
@@ -109,13 +130,32 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context)
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context)
 {
-	reset_game_req = true;
+	reset_game();
+}
+
+static void down_click_handler(ClickRecognizerRef recognizer, void *context)
+{
+	if (game_is_over)
+		return;
+
+	if (game_is_paused){
+		game_is_paused = false;
+		timer = app_timer_register(ANIMATION_STEP_MS, timer_callback, NULL);
+		layer_set_hidden(game_paused_layer, true);
+	} else {
+		game_is_paused = true;
+		app_timer_cancel(timer);
+		timer = NULL;
+		layer_set_hidden(game_paused_layer, false);
+	}
+
 }
 
 static void click_config_provider(void *context)
 {
 	window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
 	window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+	window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
 static void window_load(Window *window) {
@@ -136,6 +176,12 @@ static void window_load(Window *window) {
 	layer_set_hidden(game_over_layer, true);
 	layer_mark_dirty(game_over_layer);
 
+	game_paused_layer = layer_create(frame);
+	layer_set_update_proc(game_paused_layer, game_paused_layer_update_callback);
+	layer_add_child(window_layer, game_paused_layer);
+	layer_set_hidden(game_paused_layer, true);
+	layer_mark_dirty(game_paused_layer);
+
 	score_layer = layer_create(frame);
 	layer_set_update_proc(score_layer, score_layer_update_callback);
 	layer_add_child(window_layer, score_layer);
@@ -153,16 +199,15 @@ static void window_unload(Window *window)
 	layer_destroy(player_layer);
 	layer_destroy(platforms_layer);
 	layer_destroy(game_over_layer);
+	layer_destroy(game_paused_layer);
 	layer_destroy(score_layer);
 	layer_destroy(level_layer);
 }
 
 static void timer_callback(void *data)
 {
-	if (reset_game_req) {
-		reset_game();
-		reset_game_req = false;
-	}
+	if(game_is_paused)
+		return;
 
 	calc_platforms();
 
