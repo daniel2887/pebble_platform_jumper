@@ -112,8 +112,8 @@ void calc_player()
 		 * 	- Bottom tip of the player is attempting to
 		 * 	  move through the platform during this frame
 		 */
-		if (player.x >= data->origin.x &&
-			player.x <= (data->origin.x + data->size.w) &&
+		if ((player.x + PLAYER_BASE_WIDTH) >= data->origin.x &&
+			(player.x - PLAYER_BASE_WIDTH) <= (data->origin.x + data->size.w) &&
 			player.last_y + player.radius <= data->origin.y &&
 			player.y + player.radius >= data->origin.y &&
 			player.vel_y <= 0) {

@@ -12,6 +12,7 @@ void game_over();
 #define PLAYER_MAX_X_VEL 0.3 /* pix per ms */
 #define PLAYER_MAX_X_ACCEL 707.1 /* milli-G */
 #define PLAYER_RADIUS 10 /* pixels */
+#define PLAYER_BASE_WIDTH 3 /* pixels */
 #define PLAYER_JUMP_VEL 0.3 /* pix per ms */
 #define PLAYER_MAX_JUMPS 2
 /* Player ideal max jump height is calculated by:
